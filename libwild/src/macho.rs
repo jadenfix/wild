@@ -215,6 +215,7 @@ pub(crate) type SectionEntry = object::macho::Section64<Endianness>;
 pub(crate) type EntryPointCommand = object::macho::EntryPointCommand<Endianness>;
 pub(crate) type DylinkerCommand = object::macho::DylinkerCommand<Endianness>;
 pub(crate) type DylibCommand = object::macho::DylibCommand<Endianness>;
+pub(crate) type RpathCommand = object::macho::RpathCommand<Endianness>;
 pub(crate) type CodeSignatureCommand = object::macho::LinkeditDataCommand<Endianness>;
 pub(crate) type DyldChainedFixupsCommand = object::macho::LinkeditDataCommand<Endianness>;
 pub(crate) type ChainedFixupsHeader = object::macho::DyldChainedFixupsHeader<Endianness>;
@@ -256,6 +257,10 @@ const MAXPATHLEN: usize = 1024;
 
 pub(crate) fn load_dylib_command_size(path: &[u8]) -> usize {
     (size_of::<DylibCommand>() + path.len() + 1).next_multiple_of(MACHO_COMMAND_ALIGNMENT)
+}
+
+pub(crate) fn rpath_command_size(path: &[u8]) -> usize {
+    (size_of::<RpathCommand>() + path.len() + 1).next_multiple_of(MACHO_COMMAND_ALIGNMENT)
 }
 
 // TODO: promote to object crate
@@ -2090,6 +2095,9 @@ impl platform::Platform for MachO {
         let load_dylib_command_sizes = prelude.format_specific.load_dylib_command_sizes.clone();
         for command_size in load_dylib_command_sizes {
             allocate_load_cmd(command_size);
+        }
+        for rpath in &args.rpaths {
+            allocate_load_cmd(rpath_command_size(rpath.as_bytes()));
         }
 
         allocate_load_cmd(size_of::<DyldChainedFixupsCommand>());
