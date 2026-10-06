@@ -2112,8 +2112,9 @@ impl platform::Platform for MachO {
         }
 
         if args.headerpad_max_install_names {
-            let extra_string_space =
-                prelude.format_specific.imported_library_file_ids.len() * MAXPATHLEN;
+            let extra_string_space = (prelude.format_specific.imported_library_file_ids.len()
+                + args.rpaths.len())
+                * MAXPATHLEN;
             sizes.increment(part_id::LOAD_COMMANDS_PADDING, extra_string_space as u64);
         }
     }
