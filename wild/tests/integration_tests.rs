@@ -8622,11 +8622,14 @@ fn verify_linker_plugin_requirements(
             // Verify that the linker-driver can use a linker plugin with the default linker. This
             // helps us to skip for example clang on openSUSE which doesn't bundle the linker
             // plugin.
-            let LinkerDriver::Compiler(linker_driver) = config.linker_driver else {
-                bail!("A linker driver is required for LTO");
+            let linker_driver_string = match config.linker_driver {
+                LinkerDriver::Compiler(linker_driver) => {
+                    get_c_compiler(linker_driver.name(), linker_driver.c_language(), cross_arch)?
+                }
+                // Direct-link tests still compile LTO inputs. Probe their source compiler even
+                // though the test deliberately invokes Wild without a compiler driver.
+                LinkerDriver::Direct(_) => compiler,
             };
-            let linker_driver_string =
-                get_c_compiler(linker_driver.name(), linker_driver.c_language(), cross_arch)?;
 
             let mut command = Command::new(&linker_driver_string);
             command.args([
